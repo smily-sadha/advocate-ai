@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advocate AI — Indian Legal Assistant</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a3a5c;
+      --accent: #c9a84c;
+      --bg: #f5f4f0;
+      --card: #ffffff;
+      --text: #1e1e1e;
+      --muted: #6b7280;
+      --border: #e2e0d8;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-icon { font-size: 1.5rem; }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .model-select {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .model-select option { background: var(--primary); }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.offline { background: #f87171; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 8px;
+      overflow-y: auto;
+    }
+
+    .sidebar-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 8px 0 4px;
+    }
+
+    .feature-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text);
+      transition: background 0.15s;
+      text-align: left;
+      width: 100%;
+    }
+
+    .feature-btn:hover { background: var(--bg); }
+    .feature-btn.active { background: #1a3a5c15; color: var(--primary); font-weight: 600; }
+    .feature-btn .icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+    .kb-stats {
+      margin-top: auto;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .kb-stats strong { color: var(--primary); font-size: 1rem; }
+
+    /* Main Chat Area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Tab panels */
+    .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .panel.active { display: flex; }
+
+    /* Chat Panel */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .welcome {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .welcome h2 { font-size: 1.5rem; color: var(--primary); margin-bottom: 8px; }
+    .welcome p { font-size: 0.95rem; margin-bottom: 20px; }
+
+    .sample-queries {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .sample-query {
+      padding: 7px 14px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--primary);
+    }
+
+    .sample-query:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      max-width: 780px;
+    }
+
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .message.user .avatar { background: var(--accent); }
+    .message.assistant .avatar { background: var(--primary); }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      max-width: 600px;
+    }
+
+    .message.user .bubble {
+      background: var(--primary);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .bubble {
+      background: white;
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .bubble pre { white-space: pre-wrap; word-break: break-word; }
+
+    .sources {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .source-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      margin: 2px;
+      font-size: 0.75rem;
+    }
+
+    .speak-btn {
+      margin-top: 8px;
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+
+    .speak-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Chat Input */
+    .chat-input-area {
+      padding: 16px 24px;
+      background: white;
+      border-top: 1px solid var(--border);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: none;
+      min-height: 48px;
+      max-height: 120px;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .chat-input:focus { border-color: var(--primary); }
+
+    .send-btn, .mic-btn {
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .send-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .send-btn:hover { background: #0f2540; }
+    .send-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .mic-btn {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      color: var(--muted);
+    }
+
+    .mic-btn:hover { background: var(--primary); color: white; }
+    .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* Voice Panel */
+    .voice-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 40px;
+    }
+
+    .voice-orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 24px rgba(26,58,92,0.3);
+    }
+
+    .voice-orb:hover { transform: scale(1.05); }
+    .voice-orb.recording {
+      background: var(--danger);
+      animation: voice-pulse 1s infinite;
+    }
+
+    @keyframes voice-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(220,38,38,0); }
+    }
+
+    .voice-status {
+      font-size: 1rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .voice-result {
+      max-width: 600px;
+      width: 100%;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+    }
+
+    .voice-result.show { display: block; }
+    .voice-result h4 { color: var(--primary); margin-bottom: 8px; font-size: 0.85rem; }
+    .voice-result p { font-size: 0.9rem; line-height: 1.6; }
+
+    audio { width: 100%; margin-top: 12px; }
+
+    /* Documents Panel */
+    .doc-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .doc-panel h2 { font-size: 1.2rem; color: var(--primary); margin-bottom: 16px; }
+
+    .doc-types {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .doc-type-card {
+      padding: 16px;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .doc-type-card:hover, .doc-type-card.selected {
+      border-color: var(--primary);
+      background: #1a3a5c08;
+    }
+
+    .doc-type-card .doc-icon { font-size: 2rem; margin-bottom: 8px; }
+    .doc-type-card .doc-name { font-size: 0.85rem; font-weight: 600; color: var(--primary); }
+    .doc-type-card .doc-desc { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+    .doc-form { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .doc-form h3 { color: var(--primary); margin-bottom: 16px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+    .form-group input, .form-group textarea {
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .generate-btn {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .generate-btn:hover { background: #0f2540; }
+    .generate-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .doc-output {
+      margin-top: 20px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+    }
+
+    .doc-output.show { display: block; }
+    .doc-output pre {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+
+    .copy-btn {
+      padding: 6px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+    }
+
+    .copy-btn:hover { background: var(--primary); color: white; }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      gap: 5px;
+      padding: 12px 16px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.2s infinite;
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-8px); }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--primary);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show { opacity: 1; }
+    .toast.error { background: var(--danger); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <span class="logo-icon">⚖️</span>
+    Advocate AI
+  </div>
+  <div class="header-controls">
+    <select class="model-select" id="modelSelect">
+      <option value="llama3">🦙 Llama 3</option>
+      <option value="mistral">🌪️ Mistral</option>
+    </select>
+    <div class="status-dot" id="statusDot" title="System status"></div>
+  </div>
+</header>
+
+<!-- App -->
+<div class="app-container">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Features</div>
+    <button class="feature-btn active" onclick="showPanel('chat', this)">
+      <span class="icon">💬</span> Legal Chat
+    </button>
+    <button class="feature-btn" onclick="showPanel('voice', this)">
+      <span class="icon">🎤</span> Voice Assistant
+    </button>
+    <button class="feature-btn" onclick="showPanel('documents', this)">
+      <span class="icon">📄</span> Document Generator
+    </button>
+
+    <div class="sidebar-title" style="margin-top:12px;">Quick Help</div>
+    <button class="feature-btn" onclick="sendSample('What is Section 302 BNS?')">
+      <span class="icon">🔍</span> Section Lookup
+    </button>
+    <button class="feature-btn" onclick="sendSample('How to file FIR in India?')">
+      <span class="icon">📋</span> Court Procedures
+    </button>
+    <button class="feature-btn" onclick="sendSample('Bail process for bailable offence')">
+      <span class="icon">🏛️</span> Bail Information
+    </button>
+    <button class="feature-btn" onclick="clearChat()">
+      <span class="icon">🗑️</span> Clear Chat
+    </button>
+
+    <div class="kb-stats" id="kbStats">
+      <div>Knowledge Base</div>
+      <strong id="docCount">—</strong> documents indexed
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- Chat Panel -->
+    <div class="panel active" id="panel-chat">
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome" id="welcome">
+          <h2>⚖️ Advocate AI</h2>
+          <p>Your Indian Legal Information Assistant<br/>
+          Ask about laws, court procedures, rights, and more.</p>
+          <div class="sample-queries">
+            <span class="sample-query" onclick="sendSample(this.textContent)">What is Section 420 BNS?</span>
+            <span class="sample-query" onclick="sendSample(this.textContent)">How to file a consumer complaint?</span>
+            <span class="sample-query" onclick="sendSample(this.textContent)">Article 21 of the Constitution</span>
+            <span class="sample-query" onclick="sendSample(this.textContent)">Cheque bounce case under Section 138</span>
+            <span class="sample-query" onclick="sendSample(this.textContent)">What are my rights when arrested?</span>
+            <span class="sample-query" onclick="sendSample(this.textContent)">How to file divorce in India?</span>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <div class="input-row">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            placeholder="Ask a legal question..."
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"
+          ></textarea>
+          <button class="mic-btn" id="micBtn" onclick="toggleRecording()" title="Voice input">🎤</button>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+        <div class="hint">Covers BNS, BNSS, Constitution, NI Act & more · Not legal advice</div>
+      </div>
+    </div>
+
+    <!-- Voice Panel -->
+    <div class="panel" id="panel-voice">
+      <div class="voice-panel">
+        <div class="voice-orb" id="voiceOrb" onclick="toggleVoiceMode()">🎤</div>
+        <div class="voice-status" id="voiceStatus">
+          Tap the microphone to ask your legal question by voice
+        </div>
+        <div class="voice-result" id="voiceResult">
+          <h4>📝 Your Question</h4>
+          <p id="voiceQuery">—</p>
+          <h4 style="margin-top:14px;">⚖️ Answer</h4>
+          <p id="voiceAnswer">—</p>
+          <audio id="voiceAudio" controls style="display:none;"></audio>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Panel -->
+    <div class="panel" id="panel-documents">
+      <div class="doc-panel">
+        <h2>📄 Legal Document Generator</h2>
+        <div class="doc-types">
+          <div class="doc-type-card selected" onclick="selectDocType('legal_notice', this)">
+            <div class="doc-icon">📨</div>
+            <div class="doc-name">Legal Notice</div>
+            <div class="doc-desc">Demand, dispute resolution</div>
+          </div>
+          <div class="doc-type-card" onclick="selectDocType('rental_agreement', this)">
+            <div class="doc-icon">🏠</div>
+            <div class="doc-name">Rental Agreement</div>
+            <div class="doc-desc">Residential / commercial</div>
+          </div>
+          <div class="doc-type-card" onclick="selectDocType('nda', this)">
+            <div class="doc-icon">🔒</div>
+            <div class="doc-name">NDA</div>
+            <div class="doc-desc">Non-disclosure agreement</div>
+          </div>
+          <div class="doc-type-card" onclick="selectDocType('complaint_letter', this)">
+            <div class="doc-icon">📮</div>
+            <div class="doc-name">Complaint Letter</div>
+            <div class="doc-desc">Police, consumer forum</div>
+          </div>
+          <div class="doc-type-card" onclick="selectDocType('affidavit', this)">
+            <div class="doc-icon">📜</div>
+            <div class="doc-name">Affidavit</div>
+            <div class="doc-desc">Sworn statement</div>
+          </div>
+          <div class="doc-type-card" onclick="selectDocType('demand_letter', this)">
+            <div class="doc-icon">💼</div>
+            <div class="doc-name">Demand Letter</div>
+            <div class="doc-desc">Payment, compliance</div>
+          </div>
+        </div>
+
+        <div class="doc-form" id="docForm">
+          <h3 id="docFormTitle">Legal Notice</h3>
+          <div class="form-grid" id="docFormFields">
+            <!-- Dynamic fields injected by JS -->
+          </div>
+          <button class="generate-btn" id="generateBtn" onclick="generateDocument()">
+            Generate Document
+          </button>
+        </div>
+
+        <div class="doc-output" id="docOutput">
+          <button class="copy-btn" onclick="copyDocument()">📋 Copy Document</button>
+          <pre id="docText"></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────
+  // Same-origin: works on whatever host/port the backend is served from
+  const API = window.location.origin;
+  let sessionId = null;
+  let selectedModel = 'llama3';
+  let selectedDocType = 'legal_notice';
+  let isRecording = false;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let voiceRecording = false;
+
+  // Document form fields configuration
+  const DOC_FIELDS = {
+    legal_notice: [
+      { key: 'sender_name', label: 'Sender Name' },
+      { key: 'sender_address', label: 'Sender Address' },
+      { key: 'recipient_name', label: 'Recipient Name' },
+      { key: 'recipient_address', label: 'Recipient Address' },
+      { key: 'subject', label: 'Subject / Issue' },
+      { key: 'amount', label: 'Amount (if applicable)' },
+      { key: 'deadline', label: 'Response Deadline' },
+    ],
+    rental_agreement: [
+      { key: 'landlord_name', label: 'Landlord Name' },
+      { key: 'landlord_address', label: 'Landlord Address' },
+      { key: 'tenant_name', label: 'Tenant Name' },
+      { key: 'tenant_address', label: 'Tenant Address' },
+      { key: 'property_address', label: 'Property Address' },
+      { key: 'monthly_rent', label: 'Monthly Rent (₹)' },
+      { key: 'security_deposit', label: 'Security Deposit (₹)' },
+      { key: 'start_date', label: 'Start Date' },
+      { key: 'duration', label: 'Duration (months)' },
+    ],
+    nda: [
+      { key: 'disclosing_party', label: 'Disclosing Party' },
+      { key: 'receiving_party', label: 'Receiving Party' },
+      { key: 'purpose', label: 'Purpose of Disclosure' },
+      { key: 'duration', label: 'NDA Duration' },
+      { key: 'jurisdiction', label: 'Jurisdiction (City, India)' },
+    ],
+    complaint_letter: [
+      { key: 'complainant_name', label: 'Complainant Name' },
+      { key: 'complainant_address', label: 'Complainant Address' },
+      { key: 'authority', label: 'Authority (e.g., Commissioner of Police)' },
+      { key: 'subject', label: 'Subject of Complaint' },
+      { key: 'incident_date', label: 'Date of Incident' },
+      { key: 'details', label: 'Details of Complaint', type: 'textarea' },
+      { key: 'relief_sought', label: 'Relief Sought' },
+    ],
+    affidavit: [
+      { key: 'deponent_name', label: "Deponent's Name" },
+      { key: 'deponent_address', label: "Deponent's Address" },
+      { key: 'court', label: 'Court / Authority' },
+      { key: 'case_number', label: 'Case Number (if any)' },
+      { key: 'statement', label: 'Statement of Facts', type: 'textarea' },
+    ],
+    demand_letter: [
+      { key: 'sender_name', label: 'Sender Name' },
+      { key: 'sender_address', label: 'Sender Address' },
+      { key: 'recipient_name', label: 'Recipient Name' },
+      { key: 'demand', label: 'Demand (what you want)' },
+      { key: 'amount', label: 'Amount (if applicable)' },
+      { key: 'deadline', label: 'Deadline for Compliance' },
+    ],
+  };
+
+  // ── Init ───────────────────────────────────────────────────
+  async function init() {
+    await createSession();
+    await checkHealth();
+    await loadStats();
+    renderDocFields();
+  }
+
+  async function createSession() {
+    try {
+      const r = await fetch(`${API}/api/session/new`, { method: 'POST' });
+      const d = await r.json();
+      sessionId = d.session_id;
+    } catch {}
+  }
+
+  async function checkHealth() {
+    try {
+      const r = await fetch(`${API}/api/health`);
+      const d = await r.json();
+      const dot = document.getElementById('statusDot');
+      if (d.ollama?.connected) {
+        dot.classList.remove('offline');
+        dot.title = 'Connected — Ollama running';
+      } else {
+        dot.classList.add('offline');
+        dot.title = 'Ollama not connected';
+      }
+    } catch {
+      document.getElementById('statusDot').classList.add('offline');
+    }
+  }
+
+  async function loadStats() {
+    try {
+      const r = await fetch(`${API}/api/stats`);
+      const d = await r.json();
+      document.getElementById('docCount').textContent = d.total_documents || 0;
+    } catch {}
+  }
+
+  // ── Panel Navigation ───────────────────────────────────────
+  function showPanel(name, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.feature-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`panel-${name}`).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── Chat ───────────────────────────────────────────────────
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  async function sendMessage(text = null) {
+    const input = document.getElementById('chatInput');
+    const query = text || input.value.trim();
+    if (!query) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('welcome')?.remove();
+    document.getElementById('sendBtn').disabled = true;
+
+    appendMessage('user', query);
+    const loadingEl = appendLoading();
+
+    try {
+      const model = document.getElementById('modelSelect').value;
+      const res = await fetch(`${API}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, session_id: sessionId, model }),
+      });
+      const data = await res.json();
+
+      loadingEl.remove();
+
+      if (!res.ok) {
+        appendMessage('assistant', `⚠️ Error: ${data.detail || 'Something went wrong.'}`);
+      } else {
+        appendMessage('assistant', data.answer, data.sources, data.model_used);
+      }
+    } catch (e) {
+      loadingEl.remove();
+      appendMessage('assistant', '⚠️ Cannot reach the server. Make sure the backend is running (uvicorn main:app --reload).');
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+  }
+
+  function sendSample(text) {
+    sendMessage(text);
+    // Switch to chat panel
+    document.querySelectorAll('.feature-btn')[0].click();
+  }
+
+  function appendMessage(role, content, sources = [], modelUsed = '') {
+    const container = document.getElementById('chatMessages');
+
+    const msg = document.createElement('div');
+    msg.className = `message ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'user' ? '👤' : '⚖️';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    // Format content
+    bubble.innerHTML = formatText(content);
+
+    // Sources
+    if (sources && sources.length > 0) {
+      const sourceDiv = document.createElement('div');
+      sourceDiv.className = 'sources';
+      sourceDiv.innerHTML = '📚 Sources: ' + sources.map(s =>
+        `<span class="source-tag" title="Score: ${s.score}">${s.source}${s.section ? ' · ' + s.section.substring(0, 30) : ''}</span>`
+      ).join('');
+      bubble.appendChild(sourceDiv);
+    }
+
+    // Speak button for assistant
+    if (role === 'assistant') {
+      const speakBtn = document.createElement('button');
+      speakBtn.className = 'speak-btn';
+      speakBtn.textContent = '🔊 Listen';
+      speakBtn.onclick = () => speakText(content, speakBtn);
+      bubble.appendChild(speakBtn);
+    }
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function appendLoading() {
+    const container = document.getElementById('chatMessages');
+    const msg = document.createElement('div');
+    msg.className = 'message assistant';
+    msg.innerHTML = `
+      <div class="avatar">⚖️</div>
+      <div class="bubble">
+        <div class="loading">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>`;
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+    return msg;
+  }
+
+  function formatText(text) {
+    // Basic markdown-like formatting
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>')
+      .replace(/---/g, '<hr style="margin: 8px 0; border-color: #e5e7eb"/>');
+  }
+
+  async function speakText(text, btn) {
+    try {
+      btn.textContent = '⏳ Loading...';
+      btn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('text', text);
+
+      const res = await fetch(`${API}/api/voice/speak`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.audio_url) {
+        const audio = new Audio(`${API}${data.audio_url}`);
+        audio.play();
+        btn.textContent = '🔊 Playing...';
+        audio.onended = () => {
+          btn.textContent = '🔊 Listen';
+          btn.disabled = false;
+        };
+      }
+    } catch {
+      btn.textContent = '🔊 Listen';
+      btn.disabled = false;
+      showToast('TTS not available', true);
+    }
+  }
+
+  function clearChat() {
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = `
+      <div class="welcome" id="welcome">
+        <h2>⚖️ Advocate AI</h2>
+        <p>Your Indian Legal Information Assistant<br/>Ask about laws, court procedures, rights, and more.</p>
+        <div class="sample-queries">
+          <span class="sample-query" onclick="sendSample(this.textContent)">What is Section 420 BNS?</span>
+          <span class="sample-query" onclick="sendSample(this.textContent)">How to file a consumer complaint?</span>
+          <span class="sample-query" onclick="sendSample(this.textContent)">Article 21 of the Constitution</span>
+          <span class="sample-query" onclick="sendSample(this.textContent)">Cheque bounce case under Section 138</span>
+        </div>
+      </div>`;
+    if (sessionId) fetch(`${API}/api/session/${sessionId}`, { method: 'DELETE' });
+    createSession();
+  }
+
+  // ── Microphone (Chat inline) ───────────────────────────────
+  async function toggleRecording() {
+    if (!isRecording) {
+      await startRecording();
+    } else {
+      stopRecording();
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        await transcribeAndSend(blob);
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('micBtn').classList.add('recording');
+      document.getElementById('micBtn').title = 'Recording... click to stop';
+    } catch {
+      showToast('Microphone access denied', true);
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('micBtn').title = 'Voice input';
+    }
+  }
+
+  async function transcribeAndSend(audioBlob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+
+    try {
+      const res = await fetch(`${API}/api/voice/transcribe`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.text) {
+        document.getElementById('chatInput').value = data.text;
+        sendMessage();
+      }
+    } catch {
+      showToast('Transcription failed', true);
+    }
+  }
+
+  // ── Voice Mode Panel ───────────────────────────────────────
+  async function toggleVoiceMode() {
+    if (!voiceRecording) {
+      await startVoiceRecording();
+    } else {
+      stopVoiceRecording();
+    }
+  }
+
+  async function startVoiceRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        await processVoiceQuery(blob);
+      };
+
+      mediaRecorder.start();
+      voiceRecording = true;
+      document.getElementById('voiceOrb').classList.add('recording');
+      document.getElementById('voiceOrb').textContent = '⏹️';
+      document.getElementById('voiceStatus').textContent = 'Recording... tap to stop';
+    } catch {
+      showToast('Microphone access denied', true);
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (mediaRecorder && voiceRecording) {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      voiceRecording = false;
+      document.getElementById('voiceOrb').classList.remove('recording');
+      document.getElementById('voiceOrb').textContent = '⏳';
+      document.getElementById('voiceStatus').textContent = 'Processing your question...';
+    }
+  }
+
+  async function processVoiceQuery(audioBlob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'voice.webm');
+    formData.append('session_id', sessionId || '');
+    formData.append('model', document.getElementById('modelSelect').value);
+
+    try {
+      const res = await fetch(`${API}/api/voice/ask`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      document.getElementById('voiceQuery').textContent = data.transcribed_query;
+      document.getElementById('voiceAnswer').innerHTML = formatText(data.answer);
+      document.getElementById('voiceResult').classList.add('show');
+
+      if (data.audio_url) {
+        const audioEl = document.getElementById('voiceAudio');
+        audioEl.src = `${API}${data.audio_url}`;
+        audioEl.style.display = 'block';
+        audioEl.play();
+      }
+
+      document.getElementById('voiceOrb').textContent = '🎤';
+      document.getElementById('voiceStatus').textContent = 'Tap to ask another question';
+    } catch (e) {
+      document.getElementById('voiceStatus').textContent = 'Error. Please try again.';
+      document.getElementById('voiceOrb').textContent = '🎤';
+      showToast('Voice query failed', true);
+    }
+  }
+
+  // ── Document Generator ─────────────────────────────────────
+  function selectDocType(type, card) {
+    selectedDocType = type;
+    document.querySelectorAll('.doc-type-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+
+    const titles = {
+      legal_notice: 'Legal Notice',
+      rental_agreement: 'Rental Agreement',
+      nda: 'Non-Disclosure Agreement (NDA)',
+      complaint_letter: 'Complaint Letter',
+      affidavit: 'Affidavit',
+      demand_letter: 'Demand Letter',
+    };
+    document.getElementById('docFormTitle').textContent = titles[type];
+    document.getElementById('docOutput').classList.remove('show');
+    renderDocFields();
+  }
+
+  function renderDocFields() {
+    const fields = DOC_FIELDS[selectedDocType] || [];
+    const container = document.getElementById('docFormFields');
+    container.innerHTML = fields.map(f => `
+      <div class="form-group ${f.type === 'textarea' ? 'style="grid-column: 1/-1"' : ''}">
+        <label>${f.label}</label>
+        ${f.type === 'textarea'
+          ? `<textarea id="field_${f.key}" placeholder="${f.label}"></textarea>`
+          : `<input type="text" id="field_${f.key}" placeholder="${f.label}" />`
+        }
+      </div>
+    `).join('');
+  }
+
+  async function generateDocument() {
+    const fields = DOC_FIELDS[selectedDocType] || [];
+    const details = {};
+
+    for (const f of fields) {
+      const el = document.getElementById(`field_${f.key}`);
+      if (el && el.value.trim()) {
+        details[f.key] = el.value.trim();
+      }
+    }
+
+    if (Object.keys(details).length === 0) {
+      showToast('Please fill in at least some details', true);
+      return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    try {
+      const res = await fetch(`${API}/api/documents/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          document_type: selectedDocType,
+          details,
+          model: document.getElementById('modelSelect').value,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.detail || 'Generation failed', true);
+      } else {
+        document.getElementById('docText').textContent = data.document;
+        document.getElementById('docOutput').classList.add('show');
+        document.getElementById('docOutput').scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch {
+      showToast('Cannot reach server', true);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Generate Document';
+  }
+
+  function copyDocument() {
+    const text = document.getElementById('docText').textContent;
+    navigator.clipboard.writeText(text).then(() => showToast('Document copied!'));
+  }
+
+  // ── Toast ──────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => toast.className = 'toast', 3000);
+  }
+
+  // ── Start ──────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>

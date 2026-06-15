@@ -1,0 +1,32 @@
+# Environment
+.env
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Logs
+logs/
+*.log
+
+# Generated / runtime data
+data/audio_outputs/
+data/audio_uploads/
+data/processed/
+data/raw/
+backend/data/audio_outputs/
+backend/data/audio_uploads/
+backend/data/processed/
+backend/data/raw/
+backend/data/chroma_db/
+backend/logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
